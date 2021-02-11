@@ -22,11 +22,13 @@ async function getKeyword(data){
         .orderByRaw('year asc,month asc')
 
     if(getSearchVolume.length < 1) {
+
         availableTasks = {
             status_code: 400,
             status_error: 1,
             status_message: `No results found for this keyword : ${data.keyword}`,
         }
+
     }else{
 
         let sv_data = [];
