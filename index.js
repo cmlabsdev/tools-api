@@ -4,7 +4,7 @@ const app = express();
 require('express-async-errors');
 const morgan = require('morgan');
 const rateLimiter = require('express-rate-limit');
-const {getKeyword} = require('./services/functions');
+const {getKeyword,searchIdeasKeyword,contentIdeas} = require('./services/functions');
 
 const limiter = rateLimiter({
     status_code: 200,
@@ -37,10 +37,16 @@ app.get('/', (req, res) => {
     });
 });
 
-app.get('/asikasikjos', async (req, res) => {
-
+app.get('/overview', async (req, res) => {
     res.send(await getKeyword(req.body))
+});
 
+app.get('/keyword-ideas', async (req, res) => {
+    res.send(await searchIdeasKeyword(req.body))
+});
+
+app.get('/content-ideas', async (req, res) => {
+    res.send(await contentIdeas(req.body))
 });
 
 

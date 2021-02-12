@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const knexClient = require('../config/knex');
 const redisClient = require('../config/redis')
 const moment = require('moment');
+const MongoAPI = require('../config/mongo');
 
 async function getKeyword(data){
 
@@ -108,6 +109,54 @@ async function getKeyword(data){
     return availableTasks;
 }
 
+async function searchIdeasKeyword(data){
+
+    /*
+    * Stil need discuss
+    *
+    * */
+
+    // let searchIdeasKeyword = await knexClient('keyword_ranks')
+    //     .select('keyword')
+    //     .where({
+    //         location_code:data.location_code,
+    //         language_code:data.language_code
+    //     })
+    //     .whereRaw(`keyword like '%${data.keyword}'`)
+    //
+    // return searchIdeasKeyword;
+
+}
+
+async function contentIdeas(data){
+    let getContentSerp = await MongoAPI.find({
+        date: data.date,
+        keyword: data.keyword,
+        location_code: data.location_code,
+        language_code: data.language_code,
+        device:"desktop"
+    }, 'serp_results');
+
+    let data_content = [];
+
+    for(let i in getContentSerp){
+        for(let ii in getContentSerp[i].items){
+            if(getContentSerp[i].items[ii].title !== undefined)
+            if(getContentSerp[i].items[ii].title.includes(data.keyword)){
+                data_content.push({
+                    title:getContentSerp[i].items[ii].title,
+                    domain:getContentSerp[i].items[ii].domain
+                })
+            }
+        }
+    }
+
+    return data_content;
+
+}
+
 module.exports = {
-    getKeyword
+    getKeyword,
+    searchIdeasKeyword,
+    contentIdeas
 }
