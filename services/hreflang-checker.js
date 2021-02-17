@@ -61,7 +61,7 @@ class HreflangChecker {
           'Accept': '*/*',
           'User-Agent': UserAgent
         },
-        maxRedirects: 0
+        // maxRedirects: 0
       })
       .then(response => {
         const $ = cheerio.load(response.data);
