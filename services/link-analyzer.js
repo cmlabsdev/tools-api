@@ -32,20 +32,20 @@ class LinkAnalyzer {
             internal_links: {
               links: internalLinks,
               value: internalLinks.length,
-              percentage: (internalLinks.length / links.length * 100).toFixed(2)
+              percentage: links.length ? (internalLinks.length / links.length * 100).toFixed(2) : 0
             },
             external_links: {
               links: externalLinks,
               value: externalLinks.length,
-              percentage: (externalLinks.length / links.length * 100).toFixed(2)
+              percentage: externalLinks.length ? (externalLinks.length / links.length * 100).toFixed(2) : 0
             },
             nofollow_links: {
               value: noFollowLinksValue,
-              percentage: (noFollowLinksValue / links.length * 100).toFixed(2)
+              percentage: links.length ? (noFollowLinksValue / links.length * 100).toFixed(2) : 0
             },
             dofollow_links: {
               value: doFollowLinksValue,
-              percentage: (doFollowLinksValue / links.length * 100).toFixed(2)
+              percentage: links.length ? (doFollowLinksValue / links.length * 100).toFixed(2) : 0
             }
           }
         }
