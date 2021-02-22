@@ -64,8 +64,8 @@ class LinkAnalyzer {
       let url = $(anchor).attr('href');
       
       // check is href include mailto
-      if (url.match(/mailto:.*/i)) {
-        console.log(url)
+      if (!url || url.match(/mailto:.*/i)) {
+        console.log('Skipped', url)
         continue;
       }
       
@@ -91,8 +91,6 @@ class LinkAnalyzer {
   checkInternalLink(link, mainUrl){
     link = link.replace('www.', '');
     mainUrl = mainUrl.replace('www.', '');
-    console.log('umama', link, mainUrl);
-    console.log('wein', this.getHostname(link), this.getHostname(mainUrl));
     return this.getHostname(link) === this.getHostname(mainUrl);
   }
   
