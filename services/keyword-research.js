@@ -20,7 +20,8 @@ async function getKeyword(data){
     })
     .whereRaw("date >= '" + date + "'")
     .groupByRaw('year,month')
-    .orderByRaw('year asc,month asc')
+    .orderByRaw('year asc,month asc');
+  // console.log(getSearchVolume)
   
   if(getSearchVolume.length < 1) {
     
@@ -76,17 +77,21 @@ async function getKeyword(data){
     results.sort(function (a, b) {
       return a.year - b.year;
     });
-    
-    let getSerp = await knexClient('keyword_ranks')
-      .select(knexClient.raw('count(*) as total'))
-      .where({
-        keyword: data.keyword,
-        location_code: data.location_code,
-        language_code: data.language_code,
-        type:"paid",
-        crawl_date:data.date
-      }).first()
-    
+
+
+    let getSerp = await MongoAPI.find({
+      date: data.date,
+      keyword: data.keyword,
+      location_code: data.location_code,
+      language_code: data.language_code,
+      device:"desktop"
+    }, 'serp_results');
+
+
+    let paidFilter = getSerp[0].items.filter(function (item) {
+      return item.type == 'paid';
+    });
+
     availableTasks = {
       status_code: 200,
       status_error: 0,
@@ -96,7 +101,7 @@ async function getKeyword(data){
         sv_chart: results,
         cpc:`$ ${cpc.toFixed(3)}`,
         search_volume:results[results.length-1].total_sv,
-        paid_difficulty:getSerp.total < 1 ? 1 : getSerp.total++
+        paid_difficulty:paidFilter.length < 1 ? 1 : paidFilter.length++
       }
     }
   }
