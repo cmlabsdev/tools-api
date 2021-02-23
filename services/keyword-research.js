@@ -13,14 +13,12 @@ async function getKeyword(data){
     keyword:data.keyword,
     location_code: parseInt(data.location_code),
     language_code: data.language_code,
-  }, {created:-1},1, 'keyword_search_volume_results');
-
-  let getTotalSv = getSearchVolume.map(SearchVolume => {
-    SearchVolume['monthly_searches'].map(sv => {
-      return total_sv += sv.search_volume == null || sv.search_volume == undefined ? 0 : sv.search_volume;
-    })
-  });
-
+  }, {created:-1},1, 'keyword_search_volume_results').then((search_volume) => {
+      search_volume.map(sv => {
+        return total_sv += sv.search_volume == null || sv.search_volume == undefined ? 0 : sv.search_volume;
+      })
+    return search_volume;
+  })
 
   if(getSearchVolume.length < 1) {
     
