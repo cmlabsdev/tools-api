@@ -51,7 +51,7 @@ async function getKeyword(data){
         sv_average: Math.round(total_sv / 12),
         cpc:`$ ${(!parseFloat(getSearchVolume[0]['cpc']) ? 0 : getSearchVolume[0]['cpc'])}`,
         search_volume:getSearchVolume['monthly_searches'],
-        paid_difficulty:(!parseFloat(getSearchVolume[0]['competition']) ? 0 : (getSearchVolume[0]['competition'].toFixed(2) * 100).toFixed(2))
+        paid_difficulty:(!parseFloat(getSearchVolume[0]['competition']) ? 0 : (getSearchVolume[0]['competition'].toFixed(2) * 100).toFixed(0))
       }
     }
   }
@@ -60,7 +60,7 @@ async function getKeyword(data){
   return availableTasks;
 }
 
-async function searchIdeasKeyword(data){
+async function suggestionKeyword(data){
 
   let availableTasks = {};
   let keywords = [];
@@ -113,6 +113,56 @@ async function searchIdeasKeyword(data){
   
 }
 
+async function relatedKeyword(data){
+
+  let availableTasks = {};
+  let keywords = [];
+  let relatedKeyword = await MongoAPI.find({
+    'keyword': {
+      '$regex' : `.*${data.keyword}.*`,
+      '$options' : 'i'
+    },
+    location_code: data.location_code,
+    language_code: data.language_code,
+  }, 'related_keywords').then((keyword) => {
+      keyword[0].related_keyword.map(related => {
+        if(!keywords.includes(related.keyword)){
+          keywords.push(related.keyword);
+        }
+      });
+      return keyword;
+  })
+
+  if(relatedKeyword.length < 1 || relatedKeyword == undefined){
+      availableTasks = {
+        status_code: 404,
+        status_error: 0,
+        status_message: "Not Found"
+      }
+    }else{
+      let getDataOverview = [];
+
+      for(keywords of keywords){
+        let dataOverview = await getKeyword({
+          date: data.date,
+          keyword: keywords,
+          location_code: data.location_code,
+          language_code: data.language_code,
+        });
+        getDataOverview.push(dataOverview);
+      }
+
+      availableTasks ={
+        result:getDataOverview
+      }
+
+    }
+    return availableTasks;
+
+
+
+}
+
 async function contentIdeas(data){
   let getContentSerp = await MongoAPI.find({
     date: data.date,
@@ -142,6 +192,7 @@ async function contentIdeas(data){
 
 module.exports = {
   getKeyword,
-  searchIdeasKeyword,
-  contentIdeas
+  suggestionKeyword,
+  contentIdeas,
+  relatedKeyword
 }

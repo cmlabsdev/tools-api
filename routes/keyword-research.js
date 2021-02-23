@@ -1,7 +1,7 @@
 const express = require('express');
 const rateLimiter = require('express-rate-limit');
 const router = express.Router();
-const {getKeyword, searchIdeasKeyword, contentIdeas} = require('../services/keyword-research');
+const {getKeyword, suggestionKeyword, contentIdeas, relatedKeyword} = require('../services/keyword-research');
 
 
 const limiter = rateLimiter({
@@ -20,8 +20,12 @@ router.get('/overview', async (req, res) => {
   res.send(await getKeyword(req.body))
 });
 
-router.get('/keyword-ideas', async (req, res) => {
-  res.send(await searchIdeasKeyword(req.body))
+router.get('/keyword-ideas/suggestions', async (req, res) => {
+  res.send(await suggestionKeyword(req.body))
+});
+
+router.get('/keyword-ideas/related', async (req, res) => {
+  res.send(await relatedKeyword(req.body))
 });
 
 router.get('/content-ideas', async (req, res) => {
