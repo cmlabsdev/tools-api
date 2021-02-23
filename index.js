@@ -17,7 +17,7 @@ app.use(morgan(':remote-user [:date[web]] ":method :url HTTP/:http-version" :sta
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(mainRoute);
+app.use('/api', mainRoute);
 
 app.get('/', (req, res) => {
     res.send({
