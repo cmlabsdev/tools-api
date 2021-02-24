@@ -3,7 +3,7 @@ const router = express.Router();
 const RedirectChainChecker = require('../services/redirect-chain-checker');
 
 router.post('/check', async (req, res) => {
-  const {url, user_agent} = req.body.url;
+  const {url, user_agent} = req.body;
   if (!url) {
     return res.send({
       statusCode: 422,
