@@ -11,7 +11,7 @@ const {
     errorHandler
 } = require('./middlewares');
 
-app.use(verifySign);
+// app.use(verifySign);
 app.use(cors());
 app.use(morgan(':remote-user [:date[web]] ":method :url HTTP/:http-version" :status :res[content-length] ":response-time[digits] ms" ":referrer" :res[header] :req[header]'));
 app.use(express.json());

@@ -27,6 +27,7 @@
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^5.2.5",
     "follow-redirects": "^1.13.2",
+    "get-ssl-certificate-next": "^3.0.0",
     "knex": "^0.21.17",
     "moment": "^2.29.1",
     "mongodb": "^3.6.4",
