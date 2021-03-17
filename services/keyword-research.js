@@ -7,21 +7,19 @@ const MongoAPI = require('../config/mongo');
 async function getKeyword(data){
   
   let availableTasks = {};
-  
-  let date = moment(data.date).subtract(1,"years").format('YYYY-MM-DD');
-  let results = [];
-  
-  let getSearchVolume = await knexClient('monthly_search_volume')
-    .select(knexClient.raw('year,month,search_volume,date,cpc'))
-    .where({
-      keyword: data.keyword,
-      location_code: data.location_code,
-      language_code: data.language_code,
-    })
-    .whereRaw("date >= '" + date + "'")
-    .groupByRaw('year,month')
-    .orderByRaw('year asc,month asc')
-  
+  let total_sv =0;
+
+  let getSearchVolume = await MongoAPI.findSort({
+    keyword:data.keyword,
+    location_code: parseInt(data.location_code),
+    language_code: data.language_code,
+  }, {created:-1},1, 'keyword_search_volume_results').then((search_volume) => {
+      search_volume.map(sv => {
+        return total_sv += sv.search_volume == null || sv.search_volume == undefined ? 0 : sv.search_volume;
+      })
+    return search_volume;
+  })
+
   if(getSearchVolume.length < 1) {
     
     availableTasks = {
@@ -31,101 +29,136 @@ async function getKeyword(data){
     }
     
   }else{
-    
-    let sv_data = [];
-    let total_sv = 0;
-    let cpc = 0;
-    for (let y in getSearchVolume) {
-      cpc += getSearchVolume[y].cpc;
-      
-      sv_data.push({
-        period: getSearchVolume[y].month + ':' + getSearchVolume[y].year,
-        search_volume: getSearchVolume[y].search_volume
-      })
-      total_sv += getSearchVolume[y].search_volume;
-    }
-    
-    let obj = {};
-    
-    sv_data.forEach(function (d) {
-      if (obj.hasOwnProperty(d.period)) {
-        obj[d.period] = obj[d.period] + d.search_volume;
-      } else {
-        obj[d.period] = d.search_volume;
-      }
-    });
-    
-    var size = 0;
-    for (let key in obj) {
-      if (obj.hasOwnProperty(key)) size++;
-    }
-    
-    
-    for (const [key, val] of Object.entries(obj)) {
-      
-      let [month, year] = key.split(':');
-      
-      results.push({
-        month: month,
-        year: year,
-        period: moment(year + '-' + month + '-01').format("MMM") + ', ' + year,
-        total_sv: val
+
+    let result = [];
+
+    for(let i in getSearchVolume['monthly_searches']) {
+      result.push({
+        month: getSearchVolume['monthly_searches'][i].month,
+        year: getSearchVolume['monthly_searches'][i].year,
+        period: moment(getSearchVolume['monthly_searches'][i].month + '-' + getSearchVolume['monthly_searches'][i].month + '-01').format("MMM") + ', ' + getSearchVolume['monthly_searches'][i].month,
+        total_sv: getSearchVolume['monthly_searches'][i].month
       })
     }
-    
-    results.sort(function (a, b) {
-      return a.year - b.year;
-    });
-    
-    let getSerp = await knexClient('keyword_ranks')
-      .select(knexClient.raw('count(*) as total'))
-      .where({
-        keyword: data.keyword,
-        location_code: data.location_code,
-        language_code: data.language_code,
-        type:"paid",
-        crawl_date:data.date
-      }).first()
-    
+
     availableTasks = {
       status_code: 200,
       status_error: 0,
       status_message: "OK",
       result: {
-        sv_average: Math.round(total_sv / size),
-        sv_chart: results,
-        cpc:`$ ${cpc.toFixed(3)}`,
-        search_volume:results[results.length-1].total_sv,
-        paid_difficulty:getSerp.total < 1 ? 1 : getSerp.total++
+        sv_average: Math.round(total_sv / 12),
+        cpc:`$ ${(!parseFloat(getSearchVolume[0]['cpc']) ? 0 : getSearchVolume[0]['cpc'])}`,
+        search_volume:getSearchVolume['monthly_searches'],
+        paid_difficulty:(!parseFloat(getSearchVolume[0]['competition']) ? 0 : (getSearchVolume[0]['competition'].toFixed(2) * 100).toFixed(0))
       }
     }
   }
   
   
-  
-  
-  
-  
   return availableTasks;
 }
 
-async function searchIdeasKeyword(data){
+async function suggestionKeyword(data){
+
+  let availableTasks = {};
+  let keywords = [];
+  let searchIdeasKeyword = await MongoAPI.find({
+      date: data.date,
+      'keyword': {
+        '$regex' : `.*${data.keyword}.*`,
+        '$options' : 'i'
+      },
+      location_code: data.location_code,
+      language_code: data.language_code,
+      device:"desktop"
+    }, 'serp_results')
+      .then((keyword) => {
+        keyword.map(keywordIdeas => {
+          if(!keywords.includes(keywordIdeas.keyword)){
+            return keywords.push(keywordIdeas.keyword);
+          }
+        });
+      })
+
+  if(searchIdeasKeyword){
+    availableTasks = {
+      status_code: 404,
+      status_error: 0,
+      status_message: "Not Found"
+    }
+  }else{
+
+      let getDataOverview = [];
+
+      for(keywords of keywords){
+        let dataOverview = await getKeyword({
+          date: data.date,
+          keyword: keywords,
+          location_code: data.location_code,
+          language_code: data.language_code,
+        });
+        getDataOverview.push(dataOverview);
+      }
+
+      availableTasks ={
+        result:getDataOverview
+      }
+
+  }
+
+
+  return availableTasks;
   
-  /*
-  * Stil need discuss
-  *
-  * */
-  
-  // let searchIdeasKeyword = await knexClient('keyword_ranks')
-  //     .select('keyword')
-  //     .where({
-  //         location_code:data.location_code,
-  //         language_code:data.language_code
-  //     })
-  //     .whereRaw(`keyword like '%${data.keyword}'`)
-  //
-  // return searchIdeasKeyword;
-  
+}
+
+async function relatedKeyword(data){
+
+  let availableTasks = {};
+  let keywords = [];
+  let relatedKeyword = await MongoAPI.find({
+    'keyword': {
+      '$regex' : `.*${data.keyword}.*`,
+      '$options' : 'i'
+    },
+    location_code: data.location_code,
+    language_code: data.language_code,
+  }, 'related_keywords').then((keyword) => {
+      keyword[0].related_keyword.map(related => {
+        if(!keywords.includes(related.keyword)){
+          keywords.push(related.keyword);
+        }
+      });
+      return keyword;
+  })
+
+  if(relatedKeyword.length < 1 || relatedKeyword == undefined){
+      availableTasks = {
+        status_code: 404,
+        status_error: 0,
+        status_message: "Not Found"
+      }
+    }else{
+      let getDataOverview = [];
+
+      for(keywords of keywords){
+        let dataOverview = await getKeyword({
+          date: data.date,
+          keyword: keywords,
+          location_code: data.location_code,
+          language_code: data.language_code,
+        });
+        getDataOverview.push(dataOverview);
+      }
+
+      availableTasks ={
+        result:getDataOverview
+      }
+
+    }
+    return availableTasks;
+
+
+
 }
 
 async function contentIdeas(data){
@@ -157,6 +190,7 @@ async function contentIdeas(data){
 
 module.exports = {
   getKeyword,
-  searchIdeasKeyword,
-  contentIdeas
+  suggestionKeyword,
+  contentIdeas,
+  relatedKeyword
 }
