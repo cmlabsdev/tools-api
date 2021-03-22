@@ -20,8 +20,8 @@ class SslChecker {
   
   checkUrl(str) {
     try {
-      const url = new URL(str);
-      return url.protocol === 'https:' || url.protocol === 'http:';
+      const regex = new RegExp("^(?!:\\/\\/)(?=.{1,255}$)((.{1,63}\\.){1,127}(?![0-9]*$)[a-z0-9-]+\\.?)$")
+      return regex.test(str)
     } catch (e) {
       return false;
     }
