@@ -20,7 +20,9 @@ class HreflangChecker {
   }
   
   translateHreflang(code) {
-    const [lang_code, loc_code] = code.split('-')
+    let [lang_code, loc_code] = code.split('-')
+    lang_code = lang_code ?? '-';
+    loc_code = loc_code ?? '-';
     const language = this.LANGUAGES.find(_lang => {
       return _lang.code.toLowerCase() === lang_code.toLowerCase()
     });
