@@ -22,11 +22,11 @@ class HreflangChecker {
   translateHreflang(code) {
     const [lang_code, loc_code] = code.split('-')
     const language = this.LANGUAGES.find(_lang => {
-      return _lang.code === lang_code
+      return _lang.code.toLowerCase() === lang_code.toLowerCase()
     });
     
     const location = this.LOCATIONS.find(_loc => {
-      return _loc.code === loc_code
+      return _loc.code.toLowerCase() === loc_code.toLowerCase()
     })
     
     return {
